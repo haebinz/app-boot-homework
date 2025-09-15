@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main_layout}" >
+
+<th:block layout:fragment="css">
+
+<style>
+
+	.modal-dialog{
+		width: 100%;
+		max-width: 80%;
+	}
+		
+	.thumbnail{
+		margin-bottom: 10px;
+		width: 100%;
+		max-width: 150px;
+    }
+    
+    .content {
+		margin-top: 60px;
+	}
+		
+	.imgboard {
+		height: 500px;
+		overflow: auto;
+	}
+
+	span{
+		height: 30px;
+	}
+
+    .img-box{
+        text-align: cn;
+    }
+
+</style>
+
+</th:block>
+
+<div layout:fragment="content">
+    <section class="content">
+        <section class="container">
+            <header class="text-center">
+                <h2>이미지 갤러리</h2>
+            </header>
+            <section class="row imgboard" id="galleryCanvas">
+                <div class="col-lg-3 col-md-4  col-sm-6  col-12">
+                    <input type="checkbox" >
+                    <div class="img-box">
+                        <img class="thumbnail img-responsive" src="/img/koongya.jpg">
+                    </div>
+                    <span style='font-size: 20px;'>
+			            <a href="javascript:void(0)">쿵야</a>
+			        </span>
+			        <span>저자 | 2023-01-01</span>
+                </div>
+            </section>
+            <section>
+                <nav aria-label="Page navigation example">
+					<ul class="pagination justify-content-center"  id="pageArea"> </ul>
+				</nav>
+            </section>
+            <section class="row" style="margin-top: 15px;">
+                <div class="col-12" style="width: 100%;text-align: right;margin-right: 80px;">
+					<button type="button" class="btn btn-primary" onclick="addGallery();">글 등록</button>
+					<button type="button" class="btn btn-danger"   onclick="delGallery();">글 삭제</button>
+				</div>
+            </section>
+        </section>
+    </section>
+
+</div>
+
+</html>

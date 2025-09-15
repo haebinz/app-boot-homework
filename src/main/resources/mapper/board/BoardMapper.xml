@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="it.korea.app_boot.board.mapper.BoardMapper">
+
+<resultMap type="boardDetail" id="boardDetailMap">
+
+    <id property="brdId" column="brd_id"/>
+    <result property="title" column ="title"/>
+    <result property="writer" column ="writer"/>
+    <result property="contents" column ="contents"/>
+    <result property="readCount" column ="read_count"/>
+    <result property="likeCount" column ="like_count"/>
+    <result property="createDate" column ="create_date"/>
+    <result property="updateDate" column ="update_date"/>
+    <!-- 파일리스트 매핑 -->
+    <collection property="files" ofType="boardFiles">
+    	<id property="bfId" column="bf_id"/>
+    	<result property="fileName" column ="file_name"/>
+    	<result property="storedName" column ="stored_name"/>
+    	<result property="filePath" column ="file_path"/>
+    </collection>
+</resultMap>
+
+  <select id="getBoardTotal"  resultType="int"> 
+  
+  	 select count(*) cnt
+  	 from board
+  
+  </select>
+
+  <!-- 게시글 리스트 가져오기 > 한 페이지당 보여줄 리스트  -->
+  <select id= "getBoardList"  parameterType="searchDTO"  resultType="boardResp">
+
+      select *
+      from(
+              select brd_id,
+                    title,
+                    writer,
+                    read_count,
+                    like_count,
+                    if(update_date is null, create_date, update_date) as modified_date
+              from board
+          )b
+            order by ${orderStr}  <!--내부에서 만든 안전한 것만 ${} 기호로 사용 -->
+            limit #{offSet}, #{count}
+      
+  </select>
+  
+  <!-- resultType : 클래스를 직접사용,  resultMap : mybatis의 resultMap 사용 시  -->
+  <select id="getBoard" parameterType="map"  resultMap="boardDetailMap">
+  
+	  	select b.brd_id,
+		       b.title,
+		       b.contents ,
+		       b.writer ,
+		       b.read_count ,
+		       b.like_count ,
+		       b.create_date ,
+		       b.update_date ,
+		       bf.bf_id ,
+		       bf.file_name,
+		       bf.stored_name,
+		       bf.file_path
+		from board b
+		  left join board_files bf on b.brd_id  = bf.brd_id
+		where b.brd_id = #{brdId}
+  
+  
+  
+  </select>
+  
+  
+  <select id="getBoardFiles"  parameterType="map" resultType="boardFiles">
+  
+   	   select  bf_id ,
+		       file_name,
+		       stored_name,
+		       file_path
+		from   board_files 
+		where bf_id = #{bfId}
+  
+  
+  </select>
+  
+  
+  <insert id="insertBoard" parameterType="boardReq" useGeneratedKeys="true"  keyProperty="brdId">
+  
+  	insert  into  board(title, contents, writer)
+  	  values(  #{title},  #{contents},  #{writer} )
+  </insert>
+  
+  
+  <insert id="insertBoardFiles"  parameterType="boardFiles">
+  
+     insert into board_files(brd_id, file_name, stored_name, file_path, file_size)
+     values(#{brdId},  #{fileName},  #{storedName},  #{filePath},  #{fileSize}  )
+  
+  </insert>
+  
+  
+  
+ <update id="updateLikeCount"  parameterType="map" >
+ 
+ 	  update board
+ 	  set  like_count = #{likeCount}
+ 	  where brd_id = #{brdId}
+ 
+ </update>
+ 
+ 
+  <update id="updateReadCount"  parameterType="map" >
+ 
+ 	  update board
+ 	  set  read_count = #{readCount}
+ 	  where brd_id = #{brdId}
+ 
+ </update>
+ 
+ 
+ <update id="updateBoard"  parameterType="boardDetail">
+ 
+   update board
+   <set>
+      <if test="title neq null and  title neq ''">
+          title = #{title},
+      </if>
+      
+      <if test="contents neq null and  contents neq ''">
+          contents = #{contents},
+      </if>
+      update_date = now()
+   </set>
+   where brd_id = #{brdId}
+ 
+ 
+ </update>
+ 
+ 
+ <delete id ="deleteBoard"   parameterType="map" >
+      delete from board  where  brd_id = #{brdId}
+ </delete>
+ 
+ 
+  <delete id ="deleteBoardFile"   parameterType="map" >
+      delete from board_files  where bf_id = #{bfId}
+ </delete>
+ 
+   <delete id ="deleteAllBoardFiles"   parameterType="map" >
+      delete from board_files  where brd_id = #{brdId}
+ </delete>
+
+
+</mapper>
