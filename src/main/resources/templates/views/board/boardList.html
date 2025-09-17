@@ -2,8 +2,12 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/main_layout}" >
+      <!--layout/main_layout.html을 부모 레이아웃으로 사용.
+      이 파일은 그 레이아웃의 layout:fragment="content" 영역을 채움.-->
 
 <th:block layout:fragment="css">
+    <!--main_layout.html에서 <th:block layout:fragment="css"></th:block> 부분에 삽입됨.
+        즉, 이 페이지 전용 스타일을 공통 레이아웃에 추가해줌-->
     <style>
         .contents{
             margin: 0 auto;
@@ -15,8 +19,46 @@
         .dataTables{
             table-layout: fixed;
         }
+
+        .sch-box {
+            display: flex;
+            width: 100%;
+            align-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .sch-item{
+            display: flex;
+            gap: 5px;
+            flex: 1;
+        }
+
+        .sch-button{
+            flex: 1;
+            text-align: right;
+        }
+
+        #schType{
+           flex: 0 0  120px;
+            height: 36px;
+        }
+
+        .sch-item .form-control{
+             flex: 1 1  auto;
+             min-width: 150px;
+             width: 100%;
+             height: 36px;
+        }
+
+        .sch-item button {
+            flex: 0 0  auto;
+        }
+
     </style>
 </th:block>
+
+
 
 <div layout:fragment="content">
 
@@ -25,8 +67,18 @@
             <header class="text-center">
                  <h2> 게시판 리스트</h2>
             </header>
-            <section class="text-end">
-                <button type="button" class="btn btn-success" onclick="writeBoard();">글쓰기</button>
+            <section class="sch-box">
+                <div class="sch-item">
+                    <select class="form-select" id="schType" name="schType">
+                        <option value="title">제목</option>
+                        <option value="writer">작성자</option>
+                    </select>
+                    <input type="text" class="form-control" id="schText" name="schText">
+                    <button type="button" class="btn btn-primary" onclick="search();">검색</button>
+                </div>
+                <div class="sch-button">
+                    <button type="button" class="btn btn-success" onclick="writeBoard();">글쓰기</button>
+                </div>
             </section>
             <section class="table-list">
                 <table id="boardTable">
@@ -58,7 +110,7 @@
     </main>
     <script>
         let dataTable ;
-        //컬럼 별로 정렬하기 위해서 설정 
+        //컬럼 별로 정렬하기 위해서 설정 , thead 개수랑 동일해야한다  
         let dataColumns = [
             {data : 'brdId'},
             {data : 'title'},
@@ -67,16 +119,19 @@
             {data : 'likeCount'},
             {data : 'modifiedDate'}
         ]
-
-   
+        // 검색 조건을 담을 전역 변수 (검색 버튼 클릭 시 값이 채워짐)
+        let paramData = {};
+        
+        //DataTables 초기화 함수
         function drawData() {
             table = $('#boardTable').DataTable({
                 "order" :[
-                    [0, 'desc']
+                    [0, 'desc'] // 기본 정렬: 첫 번째 컬럼(번호) 기준 내림차순
                 ],
                 ajax : {
-                    url : '/api/v1/board/data',
-                    type : 'get',
+                    url : '/api/v1/board/data', // 데이터 가져올 서버 API
+                    type : 'get',                // GET 방식
+                    
                     data : function(d, settings) {
                         //dataTable api 객체 
                         let api = new $.fn.dataTable.Api(settings);
@@ -86,26 +141,37 @@
                         let  sidx = []; // 정렬할 헤더 
                         let  sords = []; // 정렬 방향 
 
+                        // DataTables에서 지정한 정렬 조건을 서버 파라미터로 변환
                         for(let i = 0; i < api.order().length ; i++) {
                             sidx.push( dataColumns[Number(api.order()[i][0])].data );
                             sords.push(api.order()[i][1]);
                         }
 
+                        // 검색기능이 동작할 때 
+                        if(Object.keys(paramData).length > 0) {
+                            //검색 타입과  검색어 넘기기 
+                            d.schType = paramData.schType;// 검색 타입(title, writer)
+                            d.schText = paramData.schText;// 검색어
+                        }
+
+                         // 서버에서 받을 정렬 조건
                         d.sidx = sidx.join(','); // 컬럼
                         d.sord = sords.join(','); // 정렬
 
                     },
                     dataFilter : function(data) {
+                         // 서버에서 응답받은 JSON 문자열 처리
                         console.log(data);
-                        let jsonData = $.parseJSON(data); // json 객체를 일반객체로 변경 
+                        let jsonData = $.parseJSON(data); // // 문자열 → JSON 객체 변환
                         
                         const dataObj = {};
+                       // DataTables가 요구하는 형식으로 변환
+                        dataObj.recordsTotal = jsonData.total; // // 전체 데이터 개수
+                        dataObj.recordsFiltered = jsonData.total;  // 필터링된 데이터 개수
+                        dataObj.data = jsonData.content;  // 실제 데이터 목록
+                        
                        
-                        dataObj.recordsTotal = jsonData.total;
-                        dataObj.recordsFiltered = jsonData.total;
-                        dataObj.data = jsonData.content;
-                       
-                        return JSON.stringify(dataObj);
+                        return JSON.stringify(dataObj); /// DataTables가 사용할 수 있도록 다시 문자열로 변환
                     }
                 },
                 fixedHeader :true , // 테이블 헤더 고정
@@ -143,6 +209,16 @@
            
         }
 
+
+        const search = () =>{
+            const schType = $('#schType').val();
+            const schText = $('#schText').val();
+
+            //리터럴 객체의 key 와 value 변수 이름이 같을 경우 축약 가능 
+            paramData = { schType, schText };
+            $('#boardTable').DataTable().ajax.reload();
+
+        }
 
         const writeBoard = () =>{
             location.href = '/board/add/form';

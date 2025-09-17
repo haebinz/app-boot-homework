@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <th:block th:replace="~{fragments/config::config}"></th:block>
+    <style>
+        .container{
+            display: flex;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .contents{
+            width: 400px;
+            height: 350px;
+            border: 1px solid #eeeeee;
+            border-radius: 7px;
+            box-shadow: 1px 1px 5px 2px #b9b9b9,
+                        1px 1px 15px 2px #fffafa;
+            padding: 2rem 1rem;
+
+        }
+        .box {
+            display: flex;
+            justify-content: center;
+            height: 50px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <section class="contents">
+            <div class="box text-center">
+                <h2>로그인</h2>
+            </div>
+            <form   action="/login/proc" method="post"   autocomplete="off" id="loginFrm">
+               <div class="box">
+                 <input type="text" id="username" name="username" class="form-control">
+                </div>
+                <div class="box">
+                 <input type="password" id="password" name="password" class="form-control">
+                </div>
+            </form>
+             <div class="mt-4 text-center">
+                 <button type="button" class="btn btn-primary me-2" onclick="goLogin();">로그인</button>
+                 <button type="button" class="btn btn-success">회원가입</button>
+              </div>
+        </section>
+    </main>
+    <script>
+
+        function validated () {
+            const userName = document.querySelector('#username');
+            const password = document.querySelector('#password');
+
+            if(userName.value.trim().length === 0) {
+                alert('아이디를 입력하십시오');
+                userName.focus();
+                return false;
+            }
+
+             if(password.value.trim().length === 0) {
+                alert('패스워드를 입력하십시오');
+                password.focus();
+                return false;
+            }
+            return true;
+        }
+
+        function goLogin() {
+
+            if(validated()) {
+                $('#loginFrm').submit();
+            }
+
+        }
+
+    </script>
+</body>
+</html>

@@ -82,7 +82,7 @@
                             </td>
                         </tr>
                         <tr>
-                           <td>
+                           <td id="fileTd">
                               <span th:if="${#lists.isEmpty(vo.fileList)}">없음</span>
                             
                               <ul class="file-list"  th:unless="${#lists.isEmpty(vo.fileList)}">
@@ -150,57 +150,50 @@
         }
 
         //구현해주세요
-    const delFile = (bfId) =>{
-        const isConfirm = confirm('삭제하시면 수정을 취소해도 삭제됩니다.\n진행하시겠습니까?');
-           if (isConfirm) {
-            //axios로 파일삭제 처리 서버에 delete요청보내기(bfId기준)
-      axios.delete(`/api/v1/board/file/${bfId}`)
-        .then((resp) => {
-            //response 가 정상이면 200
-          if (resp?.data?.resultCode === 200 || resp?.status === 200) {
-            // 파일 개수 줄이기
-            $('#isFile').val(0);
-            alert('첨부파일이 삭제되었습니다.');
-          } else {
-            alert('파일 삭제에 실패했습니다.');
-          }
-        })
-        .catch((err) => {
-          console.error(err);
-          alert('파일 삭제 중 오류가 발생했습니다.');
-        });
-    }
+         const delFile = (bfId) =>{
+            const isConfirm = confirm('삭제하시면 수정을 취소해도 삭제됩니다.\n진행하시겠습니까?');
+            if(isConfirm){
+                
+                axios.delete(`/api/v1/board/file/${bfId}`)
+                .then(resp =>{
+                    if(resp.data.resultCode === 200){
+                        alert('선택한 파일이 삭제되었습니다.');
+                        $('#fileTd').text('없음');  // 기존내용 덮어쓰기 
+                    }else {
+                        alert('선택한 파일 삭제가 실패되었습니다.');
+                    }
+                }).catch((error)=>{
+                    alert(error);
+                })
+
+                //지운다음에 개수 줄이기 
+                $('#isFile').val(0);
+            }
         }
 
-    //구현해주세요
-    const updateBorad =() =>{
-        //유효성 검사
-        if (validated()) {
-             const brdId = $('#brdId').val();
-      // form의 frm 호출
-      const formEl = document.getElementById('frm');
-      // fromData객체 생성
-      const formData = new FormData(formEl); 
-      
-      //axios요청->게시글 수정
-      axios.put(`/api/v1/board/${brdId}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      })
-      //response가 있으면 200
-      .then((resp) => {
-        if (resp?.data?.resultCode === 200 || resp?.status === 200) {
-          alert('수정됨');
-          //수정 후 detail페이지로 이동
-          location.href = `/board/${brdId}`;
-        } else {
-          alert('게시글 수정에 실패했습니다.');
-        }
-      })
-      .catch((err) => {
-        console.error(err);
-        alert('게시글 수정 중 오류가 발생했습니다.');
-      });
-    }
+        //구현해주세요
+        const updateBorad =() =>{
+            if( validated() ) {
+               
+                const frm = $('#frm');
+                const formData = new FormData(frm[0]);
+
+                const header ={
+                    'Content-type' : 'multipart/form-data'
+                }
+
+                axios.put('/api/v1/board', formData, header)
+                .then(resp =>{
+                    if(resp.data.resultCode === 200){
+                        alert('게시글이 수정되었습니다.');
+                        location.href = '/board/list';
+                    }else {
+                        alert('게시글이 수정이 실패되었습니다.');
+                    }
+                }).catch((error)=>{
+                    alert(error);
+                })
+            }
         }
 
 

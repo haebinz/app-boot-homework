@@ -7,11 +7,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.qlrm.executor.PageRequest;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -105,4 +105,65 @@ public class GalleryService {
 
 
     }
+
+    @Transactional
+     public void updateGallery(String nums, GalleryRequest request) throws Exception {
+     GalleryEntity entity = galleryRepository.findById(nums)
+            .orElseThrow(() -> new RuntimeException("수정할 게시물이 없습니다."));
+
+   //제목 변경
+    entity.setTitle(request.getTitle());
+
+    //파일 변경
+    if (request.getFile() != null && !request.getFile().isEmpty()) {
+        
+        String fileName = request.getFile().getOriginalFilename();
+        String ext = fileName.substring(fileName.lastIndexOf(".") + 1);
+         if(!extentions.contains(ext)) {
+             throw new RuntimeException("파일형식이 맞지 않습니다. 이미지만 가능합니다.");
+        }
+
+        //파일 삭제
+        File oldFile = new File(entity.getFilePath(), entity.getStoredName());
+        if (oldFile.exists()) oldFile.delete();
+
+        File oldThumb = new File(entity.getFilePath() + "thumb" + File.separator, entity.getFileThumbName());
+        if (oldThumb.exists()) oldThumb.delete();
+
+        //새 파일 등록
+        Map<String, Object> fileMap = fileUtils.uploadFiles(request.getFile(), filePath);
+        if (fileMap == null) {
+            throw new RuntimeException("파일 업로드 실패");
+        }
+
+        String thumbFilePath = filePath + "thumb" + File.separator;
+        File file = new File(filePath + fileMap.get("storedFileName"));
+        String thumbName = fileUtils.thumbNailFile(150, 150, file, thumbFilePath);
+
+        
+        entity.setFileName(fileMap.get("fileName").toString());
+        entity.setStoredName(fileMap.get("storedFileName").toString());
+        entity.setFileThumbName(thumbName);
+    }
+
+    galleryRepository.save(entity);
+     }
+
+
+     @Transactional
+     public void deleteGallery(List<String> numsList) {
+          for (String nums : numsList) {
+          galleryRepository.findById(nums).ifPresent(entity -> {
+            // 파일 삭제
+            File file = new File(entity.getFilePath(), entity.getStoredName());
+            if (file.exists()) file.delete();
+
+            File thumb = new File(entity.getFilePath() + "thumb" + File.separator, entity.getFileThumbName());
+            if (thumb.exists()) thumb.delete();
+
+            galleryRepository.delete(entity);
+        });
+    }
+}
+
 }

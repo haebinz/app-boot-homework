@@ -5,10 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <th:block th:replace="~{fragments/config::config}"></th:block>
+    <th:block th:replace="~{fragments/config::config}"></th:block> 
+    <!--fragments/config.html 안의 th:fragment="config"를 불러옴-->
 </head>
 <body>
     <div th:replace="~{fragments/header::header}"></div>
-    <div layout:fragment="content"></div>
+    <!--fragments/header.html안의 th:fragement="header"를 불러옴-->
+    <div layout:fragment="content"></div> 
+    <!--개별 페이지(boardList.html, gallery.html 등)에서
+        layout:decorate="~{layout/main_layout}" 형태로 이 레이아웃을 상속할 때,
+        각 페이지의 본문 내용이 여기 <div>에 들어가게 됨.-->
 </body>
 </html>

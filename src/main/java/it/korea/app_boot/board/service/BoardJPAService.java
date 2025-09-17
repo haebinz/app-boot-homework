@@ -1,7 +1,6 @@
 package it.korea.app_boot.board.service;
 
 import java.io.File;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -10,11 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ContentDisposition;
@@ -27,10 +26,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import it.korea.app_boot.board.dto.BoardDTO;
 import it.korea.app_boot.board.dto.BoardFileDTO;
+import it.korea.app_boot.board.dto.BoardSearchDTO;
 import it.korea.app_boot.board.entity.BoardEntity;
 import it.korea.app_boot.board.entity.BoardFileEntity;
 import it.korea.app_boot.board.repository.BoardFileRepository;
 import it.korea.app_boot.board.repository.BoardRepository;
+import it.korea.app_boot.board.repository.BoardSearchSpecification;
 import it.korea.app_boot.common.files.FileUtils;
 import lombok.RequiredArgsConstructor;
 
@@ -45,11 +46,30 @@ public class BoardJPAService {
     private final BoardFileRepository fileRepository;
     private final FileUtils fileUtils;
 
-    public Map<String, Object> getBoardList(Pageable pageable) throws Exception{
+    public Map<String, Object> getBoardList(BoardSearchDTO searchDTO, Pageable pageable) throws Exception{
         Map<String, Object> resultMap = new HashMap<>();
         
         //findAll() -> select * from board;
-        Page<BoardEntity> pageObj = boardRepository.findAll(pageable);
+        Page<BoardEntity> pageObj = null;
+
+        //seacrh 검색 비교 
+        if(!StringUtils.isBlank(searchDTO.getSchType()) &&
+                !StringUtils.isBlank(searchDTO.getSchText())) {
+    
+         //   if(searchDTO.getSchType().equals("title")) {
+        //        pageObj = boardRepository.findByTitleContaining(searchDTO.getSchText(), pageable);
+            
+        //    }else  if(searchDTO.getSchType().equals("writer")){
+        //        pageObj = boardRepository.findByWriterContaining(searchDTO.getSchText(), pageable); 
+        //    }
+
+            BoardSearchSpecification searchSpecification = new BoardSearchSpecification(searchDTO);
+            pageObj = boardRepository.findAll(searchSpecification, pageable);   
+        
+
+        }else {
+            pageObj = boardRepository.findAll(pageable);   
+        }
 
         // List of Entity ==> List of DTO 
         List<BoardDTO.Response> list  =
@@ -101,13 +121,112 @@ public class BoardJPAService {
           fileEntity.setFilePath(fileMap.get("filePath").toString());
           fileEntity.setFileSize(request.getFile().getSize());
           entity.addFiles(fileEntity);
-        }
+        
+        }else {
+                throw new RuntimeException("파일 업로드 실패");
+        } 
 
         boardRepository.save(entity);
 
         resultMap.put("resultCode", 200);
         resultMap.put("resultMsg", "OK");   
         
+        return resultMap;
+    }
+
+
+    @Transactional
+    public Map<String, Object> updateBoard(BoardDTO.Request request) throws Exception{
+        
+        BoardEntity entity = 
+            boardRepository.getBoard(request.getBrdId())
+                .orElseThrow(() -> new RuntimeException("게시글 없음"));
+
+        BoardDTO.Detail  detail = BoardDTO.Detail.of(entity);
+
+        entity.setTitle(request.getTitle());
+        entity.setContents(request.getContents());
+        
+        if(!request.getFile().isEmpty()) {
+
+            Map<String, Object> fileMap = fileUtils.uploadFiles(request.getFile(), filePath);
+
+            entity.getFileList().clear(); // 기존 목록 날리기 
+
+            if(fileMap != null) {
+                BoardFileEntity fileEntity = new BoardFileEntity();
+                fileEntity.setFileName(fileMap.get("fileName").toString());
+                fileEntity.setStoredName(fileMap.get("storedFileName").toString());
+                fileEntity.setFilePath(fileMap.get("filePath").toString());
+                fileEntity.setFileSize(request.getFile().getSize());
+                entity.addFiles(fileEntity);
+            
+            }else {
+                throw new RuntimeException("파일 업로드 실패");
+            }   
+        } 
+
+        boardRepository.save(entity);
+        // 데이터베이스 롤백을 대비해서 물리파일은 마지막에 지운다 
+        if(!request.getFile().isEmpty()) {
+
+            if(detail.getFileList() != null && detail.getFileList().size() > 0) {
+                  for(BoardFileDTO fileDTO : detail.getFileList()) {
+                    String oldFilePath = fileDTO.getFilePath() + fileDTO.getStoredName();
+                    //파일 삭제 
+                    fileUtils.deleteFile(oldFilePath);
+                  }
+            }
+        }
+
+        Map<String, Object> resultMap = new HashMap<>();
+
+        resultMap.put("resultCode", 200);
+        resultMap.put("resultMsg", "OK");   
+        return resultMap;
+    }
+
+
+     @Transactional
+     public Map<String, Object> deleteBoard(int brdId) throws Exception {
+
+        BoardEntity entity = 
+            boardRepository.getBoard(brdId)
+                .orElseThrow(() -> new RuntimeException("게시글 없음"));
+
+
+        boardRepository.delete(entity);
+       
+        if( entity.getFileList() != null && entity.getFileList().size() > 0) {
+            for(BoardFileEntity fileDTO : entity.getFileList()) {
+                String oldFilePath = fileDTO.getFilePath() + fileDTO.getStoredName();
+                //파일 삭제 
+                fileUtils.deleteFile(oldFilePath);
+            }
+        }
+       
+        Map<String, Object> resultMap = new HashMap<>();
+        resultMap.put("resultCode", 200);
+        resultMap.put("resultMsg", "OK");   
+        return resultMap;
+     }
+
+
+    @Transactional
+    public Map<String, Object> deleteFile(int bfId) throws Exception {
+
+        BoardFileEntity fileEntity=  fileRepository.findById(bfId)
+                                    .orElseThrow(()-> new NotFoundException("파일정보 없음"));
+        
+        fileRepository.delete(fileEntity);
+
+        String oldFilePath = fileEntity.getFilePath() + fileEntity.getStoredName();
+        fileUtils.deleteFile(oldFilePath);
+
+         Map<String, Object> resultMap = new HashMap<>();
+
+        resultMap.put("resultCode", 200);
+        resultMap.put("resultMsg", "OK");   
         return resultMap;
     }
 
@@ -163,47 +282,4 @@ public class BoardJPAService {
 
          return new ResponseEntity<>(resource, header, HttpStatus.OK);
     }
-    //파일 삭제
-    @Transactional
-    public void deleteFile(int bfId) throws Exception {
-    BoardFileEntity fileEntity = fileRepository.findById(bfId)
-            .orElseThrow(() -> new RuntimeException("파일이 존재하지 않습니다."));
-
-    // DB에서 삭제
-    fileRepository.delete(fileEntity);
-}
-
-//수정 
-@Transactional
-public Map<String, Object> updateBoard(int brdId, BoardDTO.Request request) throws Exception {
-    Map<String, Object> resultMap = new HashMap<>();
-
-    BoardEntity BoardEntity = boardRepository.findById(brdId)
-            .orElseThrow(() -> new RuntimeException("게시글이 없습니다"));
-
-    //수정
-    BoardEntity.setTitle(request.getTitle());
-    BoardEntity.setContents(request.getContents());
-
-    // 파일이 새로 들어오면 교체
-    if (request.getFile() != null && !request.getFile().isEmpty()) {
-
-        // 새 파일 저장
-        Map<String, Object> fileMap = fileUtils.uploadFiles(request.getFile(), filePath);
-        BoardFileEntity BoardFile = new BoardFileEntity();
-        BoardFile.setFileName(fileMap.get("fileName").toString());
-        BoardFile.setStoredName(fileMap.get("storedFileName").toString());
-        BoardFile.setFilePath(fileMap.get("filePath").toString());
-        BoardFile.setFileSize(request.getFile().getSize());
-
-        BoardEntity.addFiles(BoardFile);
-    }
-
-    boardRepository.save(BoardEntity);
-
-    resultMap.put("resultCode", 200);
-    resultMap.put("resultMsg", "OK");
-    return resultMap;
-}
-
 }

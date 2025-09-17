@@ -75,3 +75,20 @@ spring:
 mybatis:
   config-location: classpath:config/mybatis-config.xml
   mapper-locations: classpath:mapper/**/*.xml
+
+
+
+#로그 설정
+logging:
+  level:
+    org:
+      springframework:
+        boot:
+          autoconfigure: INFO
+      thymeleaf: OFF
+      hibernate:
+        SQL : debug
+        type:
+          descriptor:
+            sql : trace
+  config : classpath:logback.xml

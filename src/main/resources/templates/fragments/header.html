@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en"  xmlns:th="http://www.thymeleaf.org">
-  <div th:fragment="header">
+  <div th:fragment="header"><!-- header라는 이름의 fragment 정의 (다른 템플릿에서 th:replace, th:insert로 불러올 수 있음) -->
+                            <!--Thymeleaf의 fragment**는 **재사용 가능한 HTML 조각(컴포넌트)**을 의미-->
+                            <!--다른 파일에서 <div th:replace="~{header :: header}"></div>처럼 불러올 수 있음-->   
     <nav class="navbar navbar-expand-lg bg-body-tertiary">
         <div class="container-fluid">
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
@@ -12,7 +14,7 @@
                 <a class="nav-link" aria-current="page" href="#">Home</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link " href="/board/list">게시판</a>
+                <a class="nav-link " href="/board/list">게시판</a> 
               </li>
                <li class="nav-item">
                 <a class="nav-link " href="/gal">이미지게시판</a>
