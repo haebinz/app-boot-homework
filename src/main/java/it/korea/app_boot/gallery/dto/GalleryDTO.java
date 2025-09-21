@@ -2,7 +2,7 @@ package it.korea.app_boot.gallery.dto;
 
 import java.time.LocalDateTime;
 
-
+import org.hibernate.annotations.GenericGenerator;
 
 import lombok.Builder;
 import it.korea.app_boot.gallery.entity.GalleryEntity;

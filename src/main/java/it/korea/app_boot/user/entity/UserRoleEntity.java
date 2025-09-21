@@ -1,7 +1,5 @@
 package it.korea.app_boot.user.entity;
 
-
-
 import it.korea.app_boot.common.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,6 +19,6 @@ public class UserRoleEntity extends BaseEntity{
 
     private String roleName;
 
-    @Column(columnDefinition = "CHAR(1)")
+    @Column( columnDefinition = "CHAR(1)")
     private String useYn;
 }

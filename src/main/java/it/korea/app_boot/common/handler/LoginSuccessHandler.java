@@ -16,45 +16,47 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-public class LoginSuccessHandler extends SavedRequestAwareAuthenticationSuccessHandler{
+public class LoginSuccessHandler extends SavedRequestAwareAuthenticationSuccessHandler {
 
-    //htt요청을 기억하는 객체
+    //http 요청을 기억하는 객체
     private RequestCache requestCache = new HttpSessionRequestCache();
     //응답 전략
     private RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
 
-    public void setRequestCache(RequestCache requestCache){
-        this.requestCache = requestCache;
-    }
+    //세터를 통한 의존성 주입 
+    public void setRequestCache(RequestCache requestCache) {
+		this.requestCache = requestCache;
+	}
 
     //권한 처리 후 실행
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
             Authentication authentication) throws ServletException, IOException {
+    
+
+        //로그인 성공 후 처리 
+        setDefaultTargetUrl("/board/list");
+        //이동경로가 있으면 우선사용 
+        setAlwaysUseDefaultTargetUrl(false);
         
-     //로그인 성공 후 처리
-    setDefaultTargetUrl("/board/list");
-    request.getSession().setMaxInactiveInterval(1800);
+        request.getSession().setMaxInactiveInterval(1800);
+        SavedRequest savedRequest = requestCache.getRequest(request, response);
+        //세션  가져오기
+        HttpSession session = request.getSession();
+        //사용자 정보 저장
+        session.setAttribute("user", (UserSecureDTO)authentication.getPrincipal());
 
-    SavedRequest savedRequest = requestCache.getRequest(request, response);
+        //이전에 저장된 요청 경로가 있을 경우 처리 
+        if(savedRequest != null) {
+            String targetURI = savedRequest.getRedirectUrl();
 
-    //세션 가져오기
-    HttpSession session = request.getSession();
-    //사용자 정보 저장
-    session.setAttribute("user", (UserSecureDTO)authentication.getPrincipal());
-
-    if(savedRequest != null){
-        String targetURI = savedRequest.getRedirectUrl();
-
-        if(targetURI.contains("error") ||targetURI.contains(".well-known")){
-            targetURI = getDefaultTargetUrl();
+            if(targetURI.contains("error") || targetURI.contains(".well-known")
+            || targetURI.contains("login")) {
+                targetURI = getDefaultTargetUrl();
+            }
+            redirectStrategy.sendRedirect(request, response, targetURI);
+        }else {
+            redirectStrategy.sendRedirect(request, response,  getDefaultTargetUrl());
         }
-        redirectStrategy.sendRedirect(request, response, targetURI);
-
-    }else{
-        redirectStrategy.sendRedirect(request, response, getDefaultTargetUrl());
     }
-
-    }
-
 }

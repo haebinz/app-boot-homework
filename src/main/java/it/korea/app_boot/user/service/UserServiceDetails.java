@@ -10,21 +10,21 @@ import it.korea.app_boot.user.entity.UserEntity;
 import it.korea.app_boot.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 
+
 @Service
 @RequiredArgsConstructor
 public class UserServiceDetails implements UserDetailsService{
-    
+  
     private final UserRepository userRepository;
-    @Override //source에서 Override
+  
+    @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-       UserEntity user = 
-        userRepository.findById(username)
-        .orElseThrow(()->new UsernameNotFoundException(username+"을 찾을 수 없습니다"));
+
+        UserEntity user = 
+            userRepository.findById(username)
+            .orElseThrow(() -> new UsernameNotFoundException(username + "을 찾을 수 없습니다."));
 
         return new UserSecureDTO(user);
     }
-
-    
-
 
 }

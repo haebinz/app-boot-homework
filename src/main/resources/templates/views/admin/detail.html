@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main_layout}" >
+
+<th:block layout:fragment="css">
+    <style>
+        .table th, .table td{
+            vertical-align: middle;
+        }
+
+        .table label {
+            margin-top: 4px;
+        }
+
+        input.form-control[readonly] {
+            background-color: #f8f8f8   ;
+        }
+    </style>
+</th:block>
+
+<div layout:fragment="content">
+    <main class="container d-flex justify-content-center vh-100">
+        <section class="w-75 h-75">
+            <header class="text-center mt-5">
+                <h2>회원 정보 보기</h2>
+            </header>
+            <section class="mt-5">
+                <form>
+                    <table class="table">
+                        <tr>
+                            <th>
+                                <label for="userId" class="form-label">아이디</label>
+                            </th>
+                            <td>
+                                <span id="userId" name="userId" th:text="${vo.userId}"></span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>
+                                <label for="password" class="form-label">비밀번호</label>
+                            </th>
+                            <td>
+                                <input type="password" id="password" name="password"  class="form-control" >
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>
+                                <label for="userName" class="form-label">이름</label>
+                            </th>
+                            <td>
+                                <input type="text" id="userName" name="userName" class="form-control" th:value="${vo.userName}">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>
+                                <label class="form-label">성별</label>
+                            </th>
+                            <td>
+                                <span th:text="${vo.gender}"></span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>
+                                <label class="form-label">생년월일</label>
+                            </th>
+                            <td>
+                                <span th:text="${vo.birth}"></span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>
+                                <label for="phone" class="form-label">전화번호</label>
+                            </th>
+                            <td>
+                                <input type="text" id="phone"  name="phone" class="form-control" th:value="${vo.phone}">
+                            </td>
+                        </tr>
+                         <tr>
+                            <th>
+                                <label  class="form-label">이메일</label>
+                            </th>
+                            <td th:with="agencyName=${#strings.substring(vo.email, #strings.indexOf(vo.email, '@')+1 )}">
+                                <input type="text" id="mailId" name="mailId"  class="form-control d-inline-block w-25"
+                                       th:value="${#strings.substring(vo.email, 0, #strings.indexOf(vo.email, '@') )}">
+                                <span>@</span>
+                                <input type="text" id="agency"  name="agency"  class="form-control d-inline-block w-25"
+                                        th:value="${agencyName}" readonly >
+                                <select class="form-select d-inline-block w-auto" onchange="changeMail(this)">
+                                    <option value="none">====선택 ====</option>
+                                    <option value="self">직접선택</option>
+                                    <option th:selected="${agencyName =='gmail.com'}" 
+                                        value="gmail.com">gmail.com</option>
+                                    <option th:selected="${agencyName =='naver.com'}" 
+                                        value="naver.com">naver.com</option>
+                                    <option th:selected="${agencyName =='kakao.com'}" 
+                                        value="kakao.com">kakao.com</option>
+                                    <option th:selected="${agencyName =='yahoo.co.kr'}" 
+                                        value="yahoo.co.kr">yahoo.co.kr</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>
+                               <label  class="form-label">주소</label>  
+                            </th>
+                            <td>
+                                <input type="text" id="addr" name="addr" class="form-control d-inline-block w-75" th:value="${vo.addr}" readonly>
+                                <button type="button" class="btn btn-warning ms-5 mb-2" onclick="searchAddr();">주소찾기</button>
+                                <input type="text" id="addrDetail"  name="addrDetail"  class="form-control" th:value="${vo.addrDetail}">
+                            </td>
+                        </tr>
+                        <tr>
+                           <th>
+                            <label  class="form-label">권한</label>  
+                           </th>
+                           <td>
+                             <select class="form-select w-25" id="userRole">
+                                <option th:selected="${vo.userRole =='ADMIN'}" value="ADMIN">관리자</option>
+                                <option th:selected="${vo.userRole =='USER'}" value="USER">사용자</option>
+                             
+                              </select>
+                           </td>
+                        </tr>
+                        <tr>
+                         <th>
+                            <label  class="form-label">사용여부</label>  
+                         </th>
+                         <td>
+                            <select class="form-select w-25" id="useYn">
+                                <option th:selected="${vo.useYn ==''}" value="Y">사용</option>
+                                <option th:selected="${vo.useYn =='N'}" value="N">미사용</option>
+                            </select>
+                         </td>
+                        </tr>
+                    </table>
+                </form>
+                <div class="text-center mt-3">
+                    <button type="button" class="btn btn-primary me-2" onclick="updateUser();">수정</button>
+                    <button type="button" class="btn btn-danger me-2" onclick="deleteUser()">삭제</button>
+                    <button type="button" class="btn btn-secondary" onclick="goList();">목록</button>
+                </div>
+            </section>
+        </section>
+    </main>
+    <script>
+
+        const searchAddr = () =>{
+            new daum.Postcode({
+
+                onComplete: function(data) {
+                    let fullAddr = '';
+                    let extraAddr = '';
+
+                    if(data.userSelectedType === 'R') {
+                        fullAddr = data.roadAddress;
+                    }else {
+                        fullAddr = data.jibunAddress;
+                    }
+
+                    //법정동
+                    if(data.bname.trim().length > 0 || /[동|로|가]$/g.test(data.bname)){
+                        extraAddr += data.bname;
+                    }
+
+                    // 아파트명 또는 빌딩명
+                    if(data.buildingName.trim().length > 0) {
+                        extraAddr +=  (extraAddr.length > 0 ?  ', ' :  '')  + data.buildingName;
+                    }
+
+                    extraAddr =  extraAddr.length > 0 ?  `(${extraAddr})` : extraAddr;
+                    fullAddr += extraAddr;
+                    
+                    $('#addr').val(fullAddr);
+                }
+
+            }).open();
+        }
+         
+         const changeMail= (select) => {
+            const agency = $(select).val();
+            $('#agency').prop('readOnly', true);
+            
+            if(agency === 'none') {
+                return ;
+            }
+
+            if(agency === 'self' ) {
+                $('#agency').val('');
+                $('#agency').prop('readOnly', false);
+            }else {
+               $('#agency').val(agency); 
+            }
+         }
+
+
+         const validated = () =>{
+
+            const eventMessage = {
+                userName : '이름을 입력하십시오',
+                phone : '전화번호를 입력하십시오',
+                mailId : '메일 아이디를 입력하십시오',
+                agency : '메일공급자를 선택하십시오',
+                addr : '주소를 입력하십시오'
+            }
+
+            
+            const inputAddr = $('input[type="text"]:not(#addrDetail), input[type="password"]');
+
+            console.log(inputAddr)
+
+            let isConfirm = true;
+            let errorMessage = '';
+            $.each(inputAddr, (index, obj)=>{
+                const id = obj.id;
+                const value = obj.value.trim();
+
+                if(value.length === 0 && eventMessage[id]) {
+                    isConfirm = false;
+                    errorMessage = eventMessage[id];
+                    return false; // break;
+                }
+            });
+
+            if(!isConfirm) {
+                alert(errorMessage);
+                return false;
+            }
+
+            return true;
+         }
+
+
+         const updateUser = () =>{
+
+            if(validated()) {
+
+                const dataParam = {
+                    userId  :  $('#userId').text(),
+                    userName : $('#userName').val(),
+                    phone : $('#phone').val(),
+                    email : $('#mailId').val() + '@' + $('#agency').val(),
+                    addr : $('#addr').val(),
+                    addrDetail : $('#addrDetail').val(),
+                    userRole : $('#userRole').val(),
+                    useYn : $('#useYn').val()
+                } 
+
+                console.log(dataParam);
+            }
+
+         }
+
+         const goList = () =>{
+            location.href = '/admin/list';
+         }
+
+         const deleteUser=async()=>{
+            const userId = ($('#userId').text() || '').trim();
+            if (!userId) { 
+                alert('아이디가 없습니다.');
+                 return;
+             }
+
+            const isConfirm = confirm('정말 삭제하시겠습니까?');
+
+             if(!isConfirm) {
+                return false;
+             }
+
+            try{
+
+                const result = await axios.delete(`/api/v1/admin/${userId}`);
+                if(result.data.resultCode === 200) {
+                    alert('회원이 삭제되었습니다.');
+                    location.href = '/admin/list';
+                }else {
+                    alert('회원 삭제가 실패했습니다.');
+                }
+            }catch(error) {
+                console.log(error.response);
+                alert(error);
+            }
+         }
+
+    </script>
+
+</div>
+
+</html>

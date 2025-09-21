@@ -14,26 +14,24 @@ import lombok.Getter;
 @Getter
 public class UserSecureDTO extends User{
 
-    //스프링 보안이 권한 값을 받을 때 prefix를 ROLE_을 붙여야 한다. 붙여주지 않으면 인식하지 X
+    //스프링 보안이 권한 값을 받을 때 prefix를 ROLE_ 을 붙여야 인식한다.
     private static final String ROLE_PREFIX = "ROLE_";
 
     private String userId;
     private String userName;
-
-    public UserSecureDTO(UserEntity entity){
-        super(entity.getUserId(),entity.getPasswd(),makeGrantedAuthorities(entity.getRole()));
+    
+    public UserSecureDTO(UserEntity entity) {
+        super(entity.getUserId(), entity.getPasswd(), makeGrantedAuthorities(entity.getRole()));
 
         this.userId = entity.getUserId();
         this.userName = entity.getUserName();
     }
 
-    private static List<GrantedAuthority> makeGrantedAuthorities(UserRoleEntity entity){
-       List<GrantedAuthority> list = new ArrayList<>();
-       list.add(new SimpleGrantedAuthority(ROLE_PREFIX+entity.getRoleId()));
+    //생성자에서 사용해야하기 때문에 static 으로 처리 
+    private static  List<GrantedAuthority> makeGrantedAuthorities(UserRoleEntity entity) {
+        List<GrantedAuthority> list = new ArrayList<>();
 
-       return list;
-       
+        list.add(new SimpleGrantedAuthority(ROLE_PREFIX + entity.getRoleId()));
+        return list;
     }
-
-
 }

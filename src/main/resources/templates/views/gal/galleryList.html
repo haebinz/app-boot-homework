@@ -66,8 +66,7 @@
             <section class="row" style="margin-top: 15px;">
                 <div class="col-12" style="width: 100%;text-align: right;margin-right: 80px;">
 					<button type="button" class="btn btn-primary"  onclick="openModal('add');">글 등록</button>
-                    <button type="button" class="btn btn-danger"   onclick="openModal('update');">글 수정</button>
-					<button type="button" class="btn btn-secondary"   onclick="deleteImg();">글 삭제</button>
+					<button type="button" class="btn btn-danger"   onclick="deleteGallery();">글 삭제</button>
 				</div>
             </section>
         </section>
@@ -81,6 +80,7 @@
             </div>
             <div class="modal-body">
                  <form id="gallFrm">
+                    <input type="hidden" id="nums" name="nums">
                     <div class="row mb-3">
                         <div class="col-auto pt-1">
                             <label for="title" class="col-form-label">제목 : </label>
@@ -110,18 +110,16 @@
 
     <script>
 
-        let selectedNums = null;//체크박스 선택한개수
-
         let modalType = '';
-        const titles =['등록','수정'];
+        const titles =['등록', '수정'];
 
-        const openModal = (type) =>{
+        const openModal = (type, data) =>{
             modalType = type;
 
             if(modalType === 'add') {
                 addModal(titles[0]);
             }else {
-                updateModal(titles[1]);
+                updateModal(titles[1], data);
             }
         }
 
@@ -130,7 +128,7 @@
             addModal.modal('show');
 
             addModal.on('shown.bs.modal', evt =>{
-                $('#gallModalLabel').text(title);            
+                $('#gallModalLabel').text(title);         
             });
 
 
@@ -140,54 +138,23 @@
             })
         }
 
-        function updateModal(title){
-            const $checked = $('input[name="imgChk"]:checked');
-            if ($checked.length === 0) {
-            alert('수정할 항목을 선택해주세요.');
-            return;
-                }
-            if ($checked.length > 1) {
-                alert('수정은 1개씩 가능합니다.다시 선택해 주세요');
-            return;
-             }
-        selectedNums = $checked.val(); 
+        function updateModal(title, data) {
 
-    
-    modalType = 'update';
-    const $modal = $('#gallModal');
-    $modal.modal('show');
+             const updateModal = $('#gallModal');
+            updateModal.modal('show');
 
-    $modal.off('hidden.bs.modal').on('hidden.bs.modal', () => {
-      $('#gallFrm')[1].reset();
-      selectedNums = null;
-      modalType = '';
-         });
-    }
+            updateModal.on('shown.bs.modal', evt =>{
+                $('#gallModalLabel').text(title);
+                 $('#title').val(data.title);
+                 $('#nums').val(data.nums);  //수정을 위한 기본키 저장         
+            });
 
-    const deleteImg = async () => {
-    const ids = $('input[name="imgChk"]:checked').map((_, el) => $(el).val()).get();
-    if (ids.length === 0) {
-      alert('삭제할 항목을 선택하세요.');
-      return;
-    }
-    if (!confirm(`${ids.length}개 항목을 삭제하시겠습니까?`)) {
-      return;
-    }
+            updateModal.on('hidden.bs.modal', evt =>{
+                // 모든  form 입력 취소     
+                $('#gallFrm')[0].reset();      
+            })
+        }
 
-    try {
-      
-      const resp = await axios.delete('/api/v1/gal', { data: { numsList: ids } });
-      if ((resp?.data?.resultCode ?? resp?.status) === 200) {
-        alert('삭제되었습니다.');
-        getData(); 
-      } else {
-        alert('삭제에 실패했습니다.');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('삭제 중 오류가 발생했습니다.');
-    }
-  };
         
         //모달창 닫기
         function closeModal() {
@@ -241,7 +208,6 @@
          async function saveGallery(){
 
             if(validated()) {
-                
                 const gallFrm = $('#gallFrm');
                 const formData = new FormData(gallFrm[0]);
 
@@ -249,14 +215,21 @@
                     'Content-type' : 'multipart/form-data'
                 }
 
-                try{          
-                    const  resp = await  axios.post('/api/v1/gal', formData, header); 
+                try{
+                    const methodType = modalType ==='add' ? 'post' : 'put' ;
+                    const keywords =  modalType ==='add' ? '등록' : '수정' ;
+                    const  resp = await  axios({
+                        url : '/api/v1/gal',
+                        method : methodType,
+                        data: formData,
+                        headers : header
+                    }); 
                     
                     if(resp.data.resultCode === 200) {
-                        alert('이미지가 등록되었습니다.');
+                        alert(`이미지가 ${keywords} 되었습니다.`);
                         getData(); //데이터만 새로 그리기 
                     }else {
-                        alert('이미지 등록이 실패했습니다.');
+                        alert(`이미지가 ${keywords}이 실패했습니다.`);
                     }
                
                     closeModal(); //모달창 닫기 
@@ -268,13 +241,11 @@
         }
 
 
-
-
         function getData() {
             const page = $('#page').val()
             axios.get('/api/v1/gal',
              {
-                params:{page}
+                param:{page}
             }).then(res=>{
                 console.log(res.data);
                 drawGalleryPage(res.data);
@@ -308,6 +279,10 @@
             const dateSpan = $(`<span></span>`);
             const link = $('<a href="javascript:void(0)"></a>');
           
+
+            //이벤트 처리 
+            link.on('click',  ()=> openModal('update', data));
+
             link.text(data.title);
             dateSpan.text(' | ' + data.lastModifiedDate);
             imgBox.append(img); 
@@ -323,6 +298,37 @@
         }
 
 
+        async function  deleteGallery() {
+            const selected = $('input[name="imgChk"]:checked');
+
+            console.log(selected);
+
+            if(selected.length === 0) {
+                alert('삭제할 이미지를 한개이상 체크하십시오.');
+                return false;
+            }
+
+            if( !confirm('정말 삭제하시겠습니까?')) return false;
+
+            const targetIds = [];
+            $.each(selected, (index, obj)=>{
+                 targetIds.push(obj.value);
+            });
+            
+            try{
+                const res = await axios.delete(`/api/v1/gal?targetIds=${targetIds.join(",")}`);
+                if(res.data.resultCode === 200) {
+                    alert('이미지가 삭제되었습니다.');
+                }else {
+                    alert('이미지 삭제가 실패하였습니다.')
+                }
+            }catch(error) {
+                console.log(error);
+            }finally{
+                //삭제 후 화면 다시 그리기 
+                getData();
+            }
+        }
 
         $(document).ready(function(){
             getData();

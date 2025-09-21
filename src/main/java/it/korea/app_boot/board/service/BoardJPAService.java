@@ -1,6 +1,7 @@
 package it.korea.app_boot.board.service;
 
 import java.io.File;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -14,6 +15,7 @@ import org.apache.ibatis.javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ContentDisposition;
@@ -111,7 +113,7 @@ public class BoardJPAService {
         BoardEntity entity = new BoardEntity();
         entity.setTitle(request.getTitle());
         entity.setContents(request.getContents());
-        entity.setWriter("admin");
+        entity.setWriter(request.getWriter());
         
         if(fileMap != null) {
 
@@ -122,9 +124,7 @@ public class BoardJPAService {
           fileEntity.setFileSize(request.getFile().getSize());
           entity.addFiles(fileEntity);
         
-        }else {
-                throw new RuntimeException("파일 업로드 실패");
-        } 
+        }
 
         boardRepository.save(entity);
 

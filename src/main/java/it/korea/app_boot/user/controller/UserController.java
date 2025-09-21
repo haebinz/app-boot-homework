@@ -15,7 +15,7 @@ public class UserController {
 
 
     @GetMapping("/login")
-    public ModelAndView loginView(){
+    public ModelAndView  loginView() {
         ModelAndView view = new ModelAndView();
         view.setViewName("views/user/loginForm");
 
@@ -23,11 +23,15 @@ public class UserController {
     }
 
     @GetMapping("/login/error")
-    public ModelAndView loginErrorView(@RequestParam("msg")String msg){
-        ModelAndView view = new ModelAndView();
-        view.addObject("msg", msg);
-        view.setViewName("views/user/loginError");
+    public ModelAndView  loginErrorView(@RequestParam("msg")String msg) {
+      
+      ModelAndView view = new ModelAndView();
+      view.addObject("msg", msg);
+      view.setViewName("views/user/loginError");
 
         return view;
     }
+
+
+
 }

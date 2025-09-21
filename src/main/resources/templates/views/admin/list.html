@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main_layout}" >
+<th:block layout:fragment="css">
+  <link rel="stylesheet" href="/css/admin/list.css">
+</th:block>
+<div layout:fragment="content">
+    <main class="container">
+        <section class="contents">
+            <header class="text-center">
+                 <h2> 회원 리스트</h2>
+            </header>
+            <section class="sch-box" id="searchType">
+              <ul class="sch-list">
+                <li class="mx-2">
+                    <input type="text" class="form-control" id="searchText" placeholder="아이디 또는 이름">
+                </li>
+                <li>
+                    <button type="button" class="btn btn-warning" onclick="search();">검색</button>
+                </li>
+                <li class="ms-auto">
+                    <button type="button" class="btn btn-primary">등록</button>
+                </li>
+              </ul>
+            </section>
+            <section class="table-list">
+                <input type="hidden" id="page" name="page" th:value="${data.page}">
+                <input type="hidden" id="size" name="size" value="10">
+                <table class="admin-table">
+                    <colgroup>
+                      <col style="width: 10%;"/>
+                      <col style="width: 5%;"/>
+                      <col style="width: 5%;"/>
+                      <col style="width: 10%;"/>
+                      <col style="width: 10%;"/>
+                      <col style="width: 15%;"/>
+                      <col style="width: 15%;"/>
+                      <col style="width: 15%;"/>
+                      <col style="width: 5%;"/>
+                      <col style="width: 5%;"/>
+                    </colgroup>
+                    <thead class="dark">
+                        <tr>
+                            <th>아이디</th>
+                            <th>이름</th>
+                            <th>성별</th>
+                            <th>생년월일</th>
+                            <th>전화번호</th>
+                            <th>이메일</th>
+                            <th>생성일</th>
+                            <th>수정일</th>
+                            <th>사용여부</th>
+                            <th>삭제여부</th>   
+                        </tr>
+                    </thead>
+                    <tbody id="userTbody">
+                        <tr th:each="item : ${data.content}">
+                            <td >
+                                <a href="javascript:void(0);" 
+                                   th:onclick="goDetail([[ ${item.userId} ]])" 
+                                   th:text="${item.userId}"></a>
+                            </td>
+                            <td th:text="${item.userName}"></td>
+                            <td th:text="${item.gender}"></td>
+                            <td th:text="${item.birth}"></td>
+                            <td th:text="${item.phone}"></td>
+                            <td th:text="${item.email}"></td>
+                            <td th:text="${#temporals.
+                                   format(item.createDate, 'yyyy-MM-dd HH:mm:ss')}"></td>
+                            <td th:text="${#temporals.
+                                   format(item.updateDate, 'yyyy-MM-dd HH:mm:ss')}"></td>
+                            <td th:text="${item.useYn}"></td>
+                            <td th:text="${item.delYn}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+            <section>
+                <nav aria-label="Page navigation example">
+					<ul class="pagination justify-content-center"  id="pageArea" th:utext="${data.pageHTML}"> 
+                    </ul>
+				</nav>
+            </section>
+        </section>
+    </main>
+    <script>
+
+        function movePage(page) {
+            $('#page').val(page);
+            getSearchData();
+        }
+    
+
+        function makeSearchParam() {
+            return {
+                searchText : $('#searchText').val(),
+                page : $('#page').val(),
+                size : $('#size').val()
+            };
+        }
+
+        async function getSearchData(){
+            const res = await axios.get('/api/v1/admin/user', { params: makeSearchParam() });
+            drawList(res.data);
+        }
+
+        const columns =['userId', 'userName', 'gender', 
+                        'birth', 'phone', 'email', 
+                        'createDate', 'updateDate', 'useYn', 'delYn'];
+                        
+        function drawList(data) {
+            const userTbody = $('#userTbody');
+            const pageArea = $('#pageArea');
+
+            userTbody.empty();
+            pageArea.empty();
+
+             $.each(data.content, (index, obj)=>{
+                const tr =$('<tr></tr>');
+                let contents = '';
+                
+                for(let key of columns ){
+                    contents = '';
+                    const td = $('<td></td>');
+                   
+                    if(key === 'userId'){
+                        const aTag = $('<a href="javascript:void(0)"></a>');
+                        aTag.on('click', ()=> goDetail(obj[key]));
+                        aTag.text(obj[key]);
+                        contents = aTag;
+                        console.log(contents)
+                   
+                    }else {
+                        contents = obj[key];
+                    }
+
+                    td.append(contents);
+                    tr.append(td);
+                }
+
+                userTbody.append(tr);
+             });
+
+            pageArea.append(data.pageHTML);
+        }
+
+        const goDetail =(userId) =>{
+            location.href = `/admin/info?userId=${userId}`;
+        }
+
+
+        const search = () =>{
+            getSearchData();
+        }
+
+    </script>
+
+</div>
+
+</html>

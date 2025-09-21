@@ -2,12 +2,8 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/main_layout}" >
-      <!--layout/main_layout.html을 부모 레이아웃으로 사용.
-      이 파일은 그 레이아웃의 layout:fragment="content" 영역을 채움.-->
 
 <th:block layout:fragment="css">
-    <!--main_layout.html에서 <th:block layout:fragment="css"></th:block> 부분에 삽입됨.
-        즉, 이 페이지 전용 스타일을 공통 레이아웃에 추가해줌-->
     <style>
         .contents{
             margin: 0 auto;
@@ -119,19 +115,17 @@
             {data : 'likeCount'},
             {data : 'modifiedDate'}
         ]
-        // 검색 조건을 담을 전역 변수 (검색 버튼 클릭 시 값이 채워짐)
+
         let paramData = {};
-        
-        //DataTables 초기화 함수
+   
         function drawData() {
             table = $('#boardTable').DataTable({
                 "order" :[
-                    [0, 'desc'] // 기본 정렬: 첫 번째 컬럼(번호) 기준 내림차순
+                    [0, 'desc']
                 ],
                 ajax : {
-                    url : '/api/v1/board/data', // 데이터 가져올 서버 API
-                    type : 'get',                // GET 방식
-                    
+                    url : '/api/v1/board/data',
+                    type : 'get',
                     data : function(d, settings) {
                         //dataTable api 객체 
                         let api = new $.fn.dataTable.Api(settings);
@@ -141,7 +135,6 @@
                         let  sidx = []; // 정렬할 헤더 
                         let  sords = []; // 정렬 방향 
 
-                        // DataTables에서 지정한 정렬 조건을 서버 파라미터로 변환
                         for(let i = 0; i < api.order().length ; i++) {
                             sidx.push( dataColumns[Number(api.order()[i][0])].data );
                             sords.push(api.order()[i][1]);
@@ -150,28 +143,25 @@
                         // 검색기능이 동작할 때 
                         if(Object.keys(paramData).length > 0) {
                             //검색 타입과  검색어 넘기기 
-                            d.schType = paramData.schType;// 검색 타입(title, writer)
-                            d.schText = paramData.schText;// 검색어
+                            d.schType = paramData.schType;
+                            d.schText = paramData.schText;
                         }
-
-                         // 서버에서 받을 정렬 조건
                         d.sidx = sidx.join(','); // 컬럼
                         d.sord = sords.join(','); // 정렬
 
                     },
                     dataFilter : function(data) {
-                         // 서버에서 응답받은 JSON 문자열 처리
                         console.log(data);
-                        let jsonData = $.parseJSON(data); // // 문자열 → JSON 객체 변환
+                        let jsonData = $.parseJSON(data); // json 객체를 일반객체로 변경 
                         
                         const dataObj = {};
-                       // DataTables가 요구하는 형식으로 변환
-                        dataObj.recordsTotal = jsonData.total; // // 전체 데이터 개수
-                        dataObj.recordsFiltered = jsonData.total;  // 필터링된 데이터 개수
-                        dataObj.data = jsonData.content;  // 실제 데이터 목록
+                       
+                        dataObj.recordsTotal = jsonData.total;
+                        dataObj.recordsFiltered = jsonData.total;
+                        dataObj.data = jsonData.content;
                         
                        
-                        return JSON.stringify(dataObj); /// DataTables가 사용할 수 있도록 다시 문자열로 변환
+                        return JSON.stringify(dataObj);
                     }
                 },
                 fixedHeader :true , // 테이블 헤더 고정

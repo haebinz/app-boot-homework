@@ -12,15 +12,14 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public class LoginFailureHandler implements AuthenticationFailureHandler{
 
+
     @Override
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException exception) throws IOException, ServletException {
 
-                String encoded = URLEncoder.encode("아이디 또는 패스워드를 확인해 보십시오");
-                response.sendRedirect("/user/login/error?msg="+"아이디 또는 패스워드를 확인해 주십시오");
-      
-        
+        String encoded = URLEncoder.encode("아이디 또는 패스워드를 확인 하십시오");        
+        response.sendRedirect("/user/login/error?msg=" + encoded);
     }
-    
 
+    
 }
