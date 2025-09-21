@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main_layout}" >
+
+<th:block layout:fragment="css">
+    <style>
+        .contents{
+            margin: 0 auto;
+            margin-top: 10vh;
+            width : 100%;
+            height: 100vh;
+        }
+
+        .dataTables{
+            table-layout: fixed;
+        }
+
+        .sch-box {
+            display: flex;
+            width: 100%;
+            align-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .sch-item{
+            display: flex;
+            gap: 5px;
+            flex: 1;
+        }
+
+        .sch-button{
+            flex: 1;
+            text-align: right;
+        }
+
+        #schType{
+           flex: 0 0  120px;
+            height: 36px;
+        }
+
+        .sch-item .form-control{
+             flex: 1 1  auto;
+             min-width: 150px;
+             width: 100%;
+             height: 36px;
+        }
+
+        .sch-item button {
+            flex: 0 0  auto;
+        }
+
+    </style>
+</th:block>
+
+
+
+<div layout:fragment="content">
+
+    <main class="container">
+        <section class="contents">
+            <header class="text-center">
+                 <h2> 게시판 리스트</h2>
+            </header>
+            <section class="sch-box">
+                <div class="sch-item">
+                    <select class="form-select" id="schType" name="schType">
+                        <option value="title">제목</option>
+                        <option value="writer">작성자</option>
+                    </select>
+                    <input type="text" class="form-control" id="schText" name="schText">
+                    <button type="button" class="btn btn-primary" onclick="search();">검색</button>
+                </div>
+                <div class="sch-button">
+                    <button type="button" class="btn btn-success" onclick="writeBoard();">글쓰기</button>
+                </div>
+            </section>
+            <section class="table-list">
+                <table id="boardTable">
+                    <thead>
+                        <tr>
+                            <th scope="col">
+                                번호
+                            </th>
+                            <th scope="col">
+                                글 제목
+                            </th>
+                            <th scope="col">
+                                작성자
+                            </th>
+                            <th scope="col">
+                                조회수
+                            </th>
+                            <th scope="col">
+                                추천 수
+                            </th>
+                              <th scope="col">
+                                수정날짜
+                            </th>
+                        </tr>
+                    </thead>
+                </table>
+            </section>
+        </section>
+    </main>
+    <script>
+        let dataTable ;
+        //컬럼 별로 정렬하기 위해서 설정 , thead 개수랑 동일해야한다  
+        let dataColumns = [
+            {data : 'brdId'},
+            {data : 'title'},
+            {data : 'writer'},
+            {data : 'readCount'},
+            {data : 'likeCount'},
+            {data : 'modifiedDate'}
+        ]
+
+        let paramData = {};
+   
+        function drawData() {
+            table = $('#boardTable').DataTable({
+                "order" :[
+                    [0, 'desc']
+                ],
+                ajax : {
+                    url : '/api/v1/board/data',
+                    type : 'get',
+                    data : function(d, settings) {
+                        //dataTable api 객체 
+                        let api = new $.fn.dataTable.Api(settings);
+                        d.page = api.page.info().page;  // 보여줄 페이지
+                        d.size = api.page.info().length; // 한페이지에 보여줄 개수
+                        
+                        let  sidx = []; // 정렬할 헤더 
+                        let  sords = []; // 정렬 방향 
+
+                        for(let i = 0; i < api.order().length ; i++) {
+                            sidx.push( dataColumns[Number(api.order()[i][0])].data );
+                            sords.push(api.order()[i][1]);
+                        }
+
+                        // 검색기능이 동작할 때 
+                        if(Object.keys(paramData).length > 0) {
+                            //검색 타입과  검색어 넘기기 
+                            d.schType = paramData.schType;
+                            d.schText = paramData.schText;
+                        }
+                        d.sidx = sidx.join(','); // 컬럼
+                        d.sord = sords.join(','); // 정렬
+
+                    },
+                    dataFilter : function(data) {
+                        console.log(data);
+                        let jsonData = $.parseJSON(data); // json 객체를 일반객체로 변경 
+                        
+                        const dataObj = {};
+                       
+                        dataObj.recordsTotal = jsonData.total;
+                        dataObj.recordsFiltered = jsonData.total;
+                        dataObj.data = jsonData.content;
+                        
+                       
+                        return JSON.stringify(dataObj);
+                    }
+                },
+                fixedHeader :true , // 테이블 헤더 고정
+                deferRender : true, //스크롤링을 위한 지연 렌더링
+                scrollY : 542,  // 스크롤 크기
+                scrollX : true, //가로스크롤 여부 
+                scrollCollapse  : true,  //스크롤 영역 합치기
+                scroller : true,
+                searching : false,
+                ordering: true, //정렬기능 
+                info : true,
+                paging : true,
+                processing: true,
+                serverSide : true,
+                pagingType :'full_numbers',
+                lengthMenu : [10, 30, 50],
+                displayLength : 10,
+                columnDefs :[
+                    {target:0, width: '10%'},
+                    {target:[1], 
+                         width: '30%',
+                        render : function(data, type, row,  meta) {
+                            return `<a href='/board/${row.brdId}'>${data}</a>`;
+                        }
+                    },
+                    {target:[2], width: '20%'},
+                    {target:[3], width: '10%'},
+                    {target:[4], width: '10%'},
+                    {target:[5], width: '20%'}
+                ],
+                columns: dataColumns
+            });
+
+            console.log('aa');
+           
+        }
+
+
+        const search = () =>{
+            const schType = $('#schType').val();
+            const schText = $('#schText').val();
+
+            //리터럴 객체의 key 와 value 변수 이름이 같을 경우 축약 가능 
+            paramData = { schType, schText };
+            $('#boardTable').DataTable().ajax.reload();
+
+        }
+
+        const writeBoard = () =>{
+            location.href = '/board/add/form';
+        }
+
+        $(document).ready(function() {
+            drawData();
+            
+        })
+
+    </script>
+
+</div>
+
+</html>

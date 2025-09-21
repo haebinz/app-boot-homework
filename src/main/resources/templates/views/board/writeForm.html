@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main_layout}" >
+
+<th:block layout:fragment="css">
+
+    <style>
+        .container{
+            display: flex;
+            flex-direction: column;
+            height : 90vh;
+            margin-top :  10vh;
+            align-items: center;
+        }
+        
+        .write-form{
+            width:600px;
+            margin-top :20px;
+            
+        }
+        
+        #contents {
+            resize: none;
+            width:500px;
+            height:200px;
+            border-radius: 7px;
+        }
+        
+        .table th {
+            text-align: right;
+        }
+    </style>
+
+</th:block>
+
+<div layout:fragment="content">
+    <main class="container">
+        <header class="text-center">
+            <h2>게시글 쓰기</h2>
+        </header>
+        <section class="write-form">
+            <form id="frm" action ="/api/vi/board" method="post" enctype="multipart/form-data">
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th>
+                               	<label for="title" class="form-label pt-2">제목</label> 
+                            </th>
+                            <td>
+                                <input type="text" id="title" name="title" class="form-control">
+                            </td>
+                        </tr>
+                         <tr>
+                            <th>
+                               	<label for="title" class="form-label pt-2">첨부파일</label> 
+                            </th>
+                            <td>
+                                <input type="file" id="file" name="file" class="form-control">
+                            </td>
+                        </tr>
+                          <tr>
+                            <th>
+                                <label for="contents" class="form-label pt-2">내용</label>
+                            </th>
+                            <td>
+                                <textarea id="contents" name="contents"></textarea>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </form>
+        </section>
+          <section class="text-center">
+            <button type="button" class="btn btn-primary me-2" onclick="writeBoard();">글쓰기</button>
+            <button type="button" class="btn btn-secondary" onclick="goList();">취소</button>
+          </section>
+
+    </main>
+    <script>
+
+        function validated() {
+            const title = document.querySelector('#title');
+            const contents = document.querySelector('#contents');
+
+            if(title.value.trim().length === 0){
+    		alert('제목을 입력하십시오.');
+    		title.focus();
+    		return false;
+            }
+            
+            if(contents.value.trim().length === 0){
+                alert('내용을 입력하십시오.');
+                contents.focus();
+                return false;
+            }
+
+            const file = document.querySelector('#file').files[0];
+
+            if(file) {
+                const maxSize = 50 * 1024 * 1024;
+                if(file.size > maxSize){
+                    alert('파일은 최대 50mb 만 가능합니다.');
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        const writeBoard =() =>{
+            if( validated() ) {
+
+               // const frm = document.querySelector('#frm');
+               // const formData = new FormData(frm);
+                const frm = $('#frm');
+                const formData = new FormData(frm[0]);
+
+                const header ={
+                    'Content-type' : 'multipart/form-data'
+                }
+
+                axios.post('/api/v1/board', formData, header)
+                .then(resp =>{
+                    if(resp.data.resultCode === 200){
+                        alert('게시글이 등록되었습니다.');
+                        location.href = '/board/list';
+                    }else {
+                        alert('게시글이 등록이 실패되었습니다.');
+                    }
+                }).catch((error)=>{
+                    alert(error);
+                })
+
+            }
+        }
+
+
+        const goList = () =>{
+            location.href = '/board/list';
+        }
+
+
+    </script>
+</div>
+
+</html>

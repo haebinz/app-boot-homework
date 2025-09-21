@@ -1,0 +1,52 @@
+@charset "UTF-8";
+
+.container{
+     display: flex;
+     flex-direction: column;
+     height : 90vh;
+     margin-top :  10vh;
+     align-items: center;
+}
+
+.write-form{
+      width:600px;
+      margin-top :20px;   
+}
+
+#contents {
+      resize: none;
+      width:500px;
+      height:200px;
+      border-radius: 7px;
+}
+
+.table th {
+     text-align: right;
+}
+   
+.table td {
+     vertical-align: middle;
+}
+
+.file-list {
+      display : flex;
+      flex-direction : column;
+      list-style-type: none;
+      margin : 0;
+      padding: 0;
+      align-items: flex-start;
+} c
+
+.file-list a {
+  text-decoration: none;
+  color : black;
+}
+
+.file-list a:hover{
+  color : #167edb;
+  font-weight: 600;
+}
+
+.file-list  a:visited {
+	color : black;
+}

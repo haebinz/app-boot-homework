@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main_layout}" >
+
+<th:block layout:fragment="css">
+
+<style>
+
+	.modal-dialog{
+		width: 70%;
+		max-width: 50%;
+	}
+		
+	.thumbnail{
+		margin-bottom: 10px;
+		width: 100%;
+		max-width: 150px;
+    }
+    
+    .content {
+		margin-top: 60px;
+	}
+		
+	.imgboard {
+		height: 500px;
+		overflow: auto;
+	}
+
+	span{
+		height: 30px;
+	}
+
+    .img-box{
+        text-align: center;
+    }
+
+</style>
+
+</th:block>
+
+<div layout:fragment="content">
+    <section class="content">
+        <section class="container">
+            <header class="text-center">
+                <h2>이미지 갤러리</h2>
+            </header>
+            <input type="hidden" id="page" name="page" value="0">
+            <section class="row imgboard" id="galleryCanvas">        
+                <div class="col-lg-3 col-md-4  col-sm-6  col-12">
+                    <input type="checkbox" >
+                    <div class="img-box">
+                        <img class="thumbnail img-responsive" src="/img/poobao.jpg">
+                    </div>
+                    <span style='font-size: 20px;'>
+			            <a href="javascript:void(0)">푸바오</a>
+			        </span>
+			        <span>저자 | 2023-01-01</span>
+                </div>
+            </section>
+            <section>
+                <nav aria-label="Page navigation example">
+					<ul class="pagination justify-content-center"  id="pageArea"> </ul>
+				</nav>
+            </section>
+            <section class="row" style="margin-top: 15px;">
+                <div class="col-12" style="width: 100%;text-align: right;margin-right: 80px;">
+					<button type="button" class="btn btn-primary"  onclick="openModal('add');">글 등록</button>
+					<button type="button" class="btn btn-danger"   onclick="deleteGallery();">글 삭제</button>
+				</div>
+            </section>
+        </section>
+    </section>
+    <div class="modal fade" tabindex="-1" id="gallModal" aria-labelledby="gallModalLabel" aria-hidden="false" data-bs-foucs="false">
+        <div class="modal-dialog modal-dialog-centered  modal-dialog-scrollable">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="gallModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                 <form id="gallFrm">
+                    <input type="hidden" id="nums" name="nums">
+                    <div class="row mb-3">
+                        <div class="col-auto pt-1">
+                            <label for="title" class="col-form-label">제목 : </label>
+                        </div>
+                        <div class="col-9">
+                            <input type="text" class="form-control" id="title" name="title">
+                        </div>
+                    </div>
+                    <div class="row mb3">
+                        <div class="col-auto pt-1">
+                          <label class="col-form-label">파일 : </label>
+                        </div> 
+                        <div class="col-9">
+                            <input type="file" class="form-control" id="file" name="file">
+                        </div>
+                    </div>
+                 </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="saveGallery();">저장</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+            </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+
+        let modalType = '';
+        const titles =['등록', '수정'];
+
+        const openModal = (type, data) =>{
+            modalType = type;
+
+            if(modalType === 'add') {
+                addModal(titles[0]);
+            }else {
+                updateModal(titles[1], data);
+            }
+        }
+
+        function addModal(title) {
+            const addModal = $('#gallModal');
+            addModal.modal('show');
+
+            addModal.on('shown.bs.modal', evt =>{
+                $('#gallModalLabel').text(title);         
+            });
+
+
+            addModal.on('hidden.bs.modal', evt =>{
+                // 모든  form 입력 취소     
+                $('#gallFrm')[0].reset();      
+            })
+        }
+
+        function updateModal(title, data) {
+
+             const updateModal = $('#gallModal');
+            updateModal.modal('show');
+
+            updateModal.on('shown.bs.modal', evt =>{
+                $('#gallModalLabel').text(title);
+                 $('#title').val(data.title);
+                 $('#nums').val(data.nums);  //수정을 위한 기본키 저장         
+            });
+
+            updateModal.on('hidden.bs.modal', evt =>{
+                // 모든  form 입력 취소     
+                $('#gallFrm')[0].reset();      
+            })
+        }
+
+        
+        //모달창 닫기
+        function closeModal() {
+            $('#gallModal').modal('hide');
+        }
+
+
+        function validated() {
+            const title = $('#title');
+            const file = $('#file');
+
+
+            if($.trim(title.val() ).length === 0) {
+                alert('제목을 입력하십시오');
+                title.focus();
+                return false;
+            }
+
+            if(modalType ==='add' &&  file.val().length === 0) {
+                alert('등록할 파일을 선택하십시오');
+                return false;
+            }
+
+
+
+            if(modalType ==='update' &&  file.val().length > 0) {
+                const isConfirm = confirm('기존 이미지를 변경하시는 겁니까?');
+                if(!isConfirm) {
+                    return false;
+                }
+            }
+
+            if(file.val().length > 0 ) {
+                if(!file.val().match(/\.(jpg|jpeg|png|gif|webp|bmp)$/i)){
+                    alert('이미지만 업로드가 가능합니다.');
+                    return false;
+                }
+            }
+
+            const maxSize = 1024*1024*50;
+
+            if(file[0].files[0].size >  maxSize ) {
+                alert('파일최대크기는 50MB 까지 가능합니다.');
+                return false;
+            }
+            
+            return true;
+        }
+
+        
+         async function saveGallery(){
+
+            if(validated()) {
+                const gallFrm = $('#gallFrm');
+                const formData = new FormData(gallFrm[0]);
+
+                const header ={
+                    'Content-type' : 'multipart/form-data'
+                }
+
+                try{
+                    const methodType = modalType ==='add' ? 'post' : 'put' ;
+                    const keywords =  modalType ==='add' ? '등록' : '수정' ;
+                    const  resp = await  axios({
+                        url : '/api/v1/gal',
+                        method : methodType,
+                        data: formData,
+                        headers : header
+                    }); 
+                    
+                    if(resp.data.resultCode === 200) {
+                        alert(`이미지가 ${keywords} 되었습니다.`);
+                        getData(); //데이터만 새로 그리기 
+                    }else {
+                        alert(`이미지가 ${keywords}이 실패했습니다.`);
+                    }
+               
+                    closeModal(); //모달창 닫기 
+               
+                }catch(error) {
+                    alert(error);
+                }
+            }
+        }
+
+
+        function getData() {
+            const page = $('#page').val()
+            axios.get('/api/v1/gal',
+             {
+                param:{page}
+            }).then(res=>{
+                console.log(res.data);
+                drawGalleryPage(res.data);
+            });
+        }
+
+
+        function drawGalleryPage(data) {
+            const galleryCanvas = $('#galleryCanvas');
+            const pageArea = $('#pageArea');
+
+            galleryCanvas.empty();
+            pageArea.empty();
+
+            $.each(data.content, (index, obj)=>{
+                const html = makeGalleryBox(obj);
+                galleryCanvas.append(html);
+            })
+
+            pageArea.append(data.pageHTML);
+        }
+        
+        
+        
+        function makeGalleryBox(data) {
+            const rootDiv = $('<div class="col-lg-3 col-md-4  col-sm-6  col-12"></div>');
+            const checkBox = $(`<input type="checkbox" name="imgChk" value="${data.nums}">`)
+            const imgBox = $('<div class="img-box"></div>');
+            const img = $(`<img src="/static/imgs/thumb/${data.fileThumbName}" alt="${data.title}">`);
+            const titleSpan = $(`<span style='font-size: 20px;'></span>`);
+            const dateSpan = $(`<span></span>`);
+            const link = $('<a href="javascript:void(0)"></a>');
+          
+
+            //이벤트 처리 
+            link.on('click',  ()=> openModal('update', data));
+
+            link.text(data.title);
+            dateSpan.text(' | ' + data.lastModifiedDate);
+            imgBox.append(img); 
+            
+            rootDiv.append(checkBox);
+            rootDiv.append(imgBox);
+            rootDiv.append(link);
+            rootDiv.append(titleSpan);
+            rootDiv.append(dateSpan);
+
+            return rootDiv;
+            
+        }
+
+
+        async function  deleteGallery() {
+            const selected = $('input[name="imgChk"]:checked');
+
+            console.log(selected);
+
+            if(selected.length === 0) {
+                alert('삭제할 이미지를 한개이상 체크하십시오.');
+                return false;
+            }
+
+            if( !confirm('정말 삭제하시겠습니까?')) return false;
+
+            const targetIds = [];
+            $.each(selected, (index, obj)=>{
+                 targetIds.push(obj.value);
+            });
+            
+            try{
+                const res = await axios.delete(`/api/v1/gal?targetIds=${targetIds.join(",")}`);
+                if(res.data.resultCode === 200) {
+                    alert('이미지가 삭제되었습니다.');
+                }else {
+                    alert('이미지 삭제가 실패하였습니다.')
+                }
+            }catch(error) {
+                console.log(error);
+            }finally{
+                //삭제 후 화면 다시 그리기 
+                getData();
+            }
+        }
+
+        $(document).ready(function(){
+            getData();
+        });
+    </script>
+
+</div>
+
+</html>

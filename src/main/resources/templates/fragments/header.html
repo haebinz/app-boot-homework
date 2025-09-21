@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en"  xmlns:th="http://www.thymeleaf.org"
+                 xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+  <div th:fragment="header">
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+        <div class="container-fluid">
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarText">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                <a class="nav-link" aria-current="page" href="#">Home</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link " href="/board/list">게시판</a>
+              </li>
+               <li class="nav-item">
+                <a class="nav-link " href="/gal">이미지게시판</a>
+              </li>
+              <li sec:authorize="hasRole('ROLE_ADMIN')">
+                  <a class="nav-link " href="/admin/list">회원게시판</a>
+              </li>
+            </ul>
+            <span class="navbar-text" sec:authorize="isAnonymous()">
+              <a href="/login">로그인</a>
+            </span>
+            <ul class="navbar-nav" sec:authorize="isAuthenticated()">
+               <li class="nav-item dropdown">
+               <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <span  th:text="${#authentication.name}"></span>님  안녕하세요
+                </a>
+                <ul class="dropdown-menu" style="width: 150px;">
+                  <li><a class="dropdown-item" href="#">사용자정보</a></li>
+                  <li><a class="dropdown-item" href="/logout">로그 아웃</a></li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div> 
+    </nav>
+  </div>
+</html>

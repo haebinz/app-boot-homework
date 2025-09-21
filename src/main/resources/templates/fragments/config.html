@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+
+<th:block th:fragment="config">
+
+  <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.8/css/bootstrap.css}">
+  <link rel="stylesheet" th:href="@{/webjars/font-awesome/7.0.0/css/all.css}">
+  <link rel="stylesheet" th:href="@{/webjars/datatables/2.3.2/css/dataTables.dataTables.css}">
+
+
+  <script type="text/javascript" th:src="@{/webjars/jquery/3.7.1/jquery.js}"></script>
+  <script type="text/javascript" th:src="@{/webjars/bootstrap/5.3.8/js/bootstrap.bundle.js}"></script>
+  <script type="text/javascript" th:src="@{/webjars/datatables/2.3.2/js/dataTables.js}"></script>
+  <script type="text/javascript" th:src="@{/webjars/axios/1.11.0/dist/axios.js}"></script>
+  <script type="text/javascript" th:src="@{/js/axiosCommon.js}"></script>
+  <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+
+<!--contents 에서 사용하는 css 를 config 파일에 적용 -->
+<th:block layout:fragment="css"></th:block>
+
+
+<!--jquery 충돌방지 로직  -->
+<script>
+      
+      jQuery.browser = {};    
+
+      (function(){
+
+            jQuery.browser.msie = false;
+            jQuery.browser.version = 0;
+
+            if(navigator.userAgent.match(/MSIE ([0-9]+)\./)) {
+                  jQuery.browser.msie = true;
+                  jQuery.browser.version = parsInt(match[1], 10);
+            }
+
+            //IE11 버전 체크
+            if(navigator.userAgent.match(/Trident\/7\./)) {
+                   jQuery.browser.msie = true;
+                  jQuery.browser.version = 11;
+            }
+      })();
+</script>
+
+
+</th:block>
+
+
+</html>
